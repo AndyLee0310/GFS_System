@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}階級(升團)紀錄{% endblock %}
+{% block content %}
+<form method="POST" action="/user/profile/edit">
+    <h3 align="center">階級(升團)紀錄</h3>
+    {% if current_user.member_id != None and current_user.member_id != "" and current_user.auth != "0" %}
+    <table class="table table-hover text-center">
+        <thead class="table-secondary">
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">階級(升團)名稱</th>
+                <th scope="col">(升團)日期</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i, item in levels %}
+            <tr>
+                <th scope="row">{{ i + 1 }}</th>
+                <td id="promotion_name_{{ i }}">{{ item.name }}</td>
+                <td id="promotion_date_{{ i }}">{{ item.promotion_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <Script>
+        alert("尚未驗證團員身份，請聯繫團長為您驗證身份");
+        window.location.href = "/";
+    </Script>
+    {% endif %}
+    <br />
+</form>
+{% endblock %}

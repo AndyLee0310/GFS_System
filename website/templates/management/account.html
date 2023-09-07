@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}帳號管理{% endblock %}
+{% block content %}
+<div class="row align-items-center justify-content-between">
+    <div class="col">
+        <h1>帳號管理</h1>
+    </div>
+    <div class="col d-md-flex justify-content-md-end">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#memberModal"
+            data-bs-whatever="新增">新增</button>
+        <!-- Modal -->
+        <div class="modal fade" id="memberModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="memberModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="memberForm" method="POST" action="/management/members/create">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="memberModalLabel">新增團員</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group" hidden>
+                                <label for="id">ID</label>
+                                <input type="text" class="form-control" id="id" name="id" placeholder="Enter id">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">電子信箱</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                    placeholder="Enter email" onchange="getEmail()" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="name">姓名</label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                    placeholder="Enter your name" required>
+                            </div>
+                            <div class="form-group" id="fieldForPassword">
+                                <label for="newPassword">密碼</label>
+                                <div class="input-group mb-3">
+                                    <input type="password" class="form-control" placeholder="Enter password" aria-label="Enter password" aria-describedby="eyeButton" id="newPassword" name="newPassword">
+                                    <button class="btn btn-outline-secondary" type="button" id="new_eyeButton" onclick="showPassword('new')"><i class="fa-regular fa-eye"></i></button>
+                                </div>                                  
+                            </div>
+                            <div class="form-group">
+                                <label for="memberDataList">連結團員</label>
+                                <input type="hidden" class="form-control" id="member_id"
+                                    name="member_id" placeholder="Enter member id">
+                                <input class="form-control" list="datalistOptions" id="memberDataList" placeholder="Select the member..." onchange="getMemberId()&checkLinkStatus()">
+                                <datalist id="datalistOptions">
+                                    {% for member in members %}
+                                    <option value="{{ member.id }}_{{ member.name }}_({{ member.number_of_periods }})">
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                            <div class="form-group">
+                                <label for="auth">權限</label>
+                                <select class="form-select" aria-label="Select auth" id="auth" name="auth" required>
+                                    <option value="0" selected>訪客</option>
+                                    <option value="1">一般</option>
+                                    <option value="2">管理員/系統管理員</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="state">帳號狀態</label>
+                                <input type="text" class="form-control" id="state" name="state"
+                                    placeholder="Enter state" value="正常" readonly>
+                            </div>
+                            <br />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">送出</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<table class="table table-hover text-center">
+    <thead class="table-secondary">
+        <tr>
+            <th scope="col">Id</th>
+            <th scope="col">電子信箱</th>
+            <th scope="col">姓名</th>
+            <th scope="col">連結團員</th>
+            <th scope="col">權限</th>
+            <th scope="col">帳號狀態</th>
+            <th scope="col">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr class="{% if user.auth == '0' %}{% elif user.auth == '1' %}table-success{% elif user.auth == '2' %}table-primary{% endif %}">
+            <th scope="row">{{ user.id }}</th>
+            <td id="email_{{ user.id }}">{{ user.email }}</td>
+            <td id="name_{{ user.id }}">{{ user.name }}</td>
+            <td id="member_id_{{ user.id }}">{% if user.member_id == None %}{% else %}{{ user.member_id }}{% endif %}</td>
+            <td id="auth_{{ user.id }}">{% if user.auth == '0' %}訪客{% elif user.auth == '1' %}一般{% else %}管理員/系統管理員{% endif %}</td>
+            <td id="state_{{ user.id }}">
+                {% if user.state == '1' %}
+                <span style="color: #198754">正常</span>
+                <i class="fa-solid fa-check" style="color: #198754;"></i>
+                {% else %}
+                <span style="color: #ff0000">停權</span>
+                <i class="fa-solid fa-xmark" style="color: #ff0000;"></i>
+                {% endif %}
+            </td>
+            <td>
+                <div class="row justify-content-center">
+                    <div class="col-4">
+                        <form method="post" action="/management/account/reset_password">
+                            <input type="hidden" class="form-control" id="reset_password_{{ user.id }}" name="reset_password_{{ user.id }}" value="{{ user.email }}">
+                            <button type="submit" class="btn btn-warning">重設密碼</button>
+                        </form>
+                    </div>
+                    <div class="col-3">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#memberModal" data-bs-whatever="編輯_{{ user.id }}">編輯</button>
+                    </div>
+                    <div class="col-3">
+                        <form method="post" action="/management/account/change_state">
+                            <input type="hidden" class="form-control" id="change_state_{{ user.id }}" name="change_state_{{ user.id }}" value="{{ user.id }}">
+                            <button type="submit" class="btn {% if user.state == '1': %}btn-danger{% elif user.state == '0': %}btn-success{% endif %}">
+                                {% if user.state == "1": %}停用{% elif user.state == "0": %}啟用{% endif%}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    function getEmail() {
+        var email = document.getElementById("email").value;
+        SetDefaultPassword(email);
+    }
+
+    function SetDefaultPassword(email) {
+        if (email.includes("@")) {
+            document.getElementById("newPassword").value = email.split("@")[0];
+        }
+    }
+
+    var memberModal = document.getElementById('memberModal')
+    memberModal.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        var button = event.relatedTarget
+        // Extract info from data-bs-* attributes
+        var recipient = button.getAttribute('data-bs-whatever')
+        // If necessary, you could initiate an AJAX request here
+        // and then do the updating in a callback.
+        //
+        // Update the modal's content.
+        var modalTitle = memberModal.querySelector('.modal-title')
+        var modalBodyInput = memberModal.querySelector('.modal-body input')
+
+        //   modalBodyInput.value = recipient
+        if (recipient == '新增') {
+            document.getElementById("memberForm").action = "/management/account/create";
+            modalTitle.textContent = recipient + '帳號'
+
+            document.getElementById("email").readOnly = false;
+            document.getElementById("fieldForPassword").hidden = false;
+
+            document.getElementById("id").value = id;
+            document.getElementById("email").value = "";
+            document.getElementById("name").value = "";
+            document.getElementById("memberDataList").value = "";
+            document.getElementById("auth").value = "0";
+            document.getElementById("state").value = "正常";
+        } else if (recipient.includes("編輯")) {
+            document.getElementById("memberForm").action = "/management/account/edit";
+            modalTitle.textContent = recipient.split("_")[0] + '帳號'
+            document.getElementById("email").readOnly = true;
+            document.getElementById("fieldForPassword").hidden = true;
+
+            var id = recipient.split("_")[1];
+            document.getElementById("id").value = id;
+            document.getElementById("email").value = document.getElementById("email_" + id).textContent;
+            document.getElementById("name").value = document.getElementById("name_" + id).textContent;
+            var member_id = document.getElementById("member_id_" + id).textContent;
+            if (member_id == "") {
+                document.getElementById("memberDataList").value = "";
+            } else {
+                getMember(member_id);
+            }
+            document.getElementById("auth").value = document.getElementById("auth_" + id).textContent == "管理員/系統管理員" ? "2" : document.getElementById("auth_" + id).textContent == "一般" ? "1" : "0";
+            var _state = document.getElementById("state_" + id).textContent.replace("\n", "").replace(/\s*/g, "");
+            document.getElementById("state").value = _state;
+        }
+    })
+
+    function getMember(_member_id) {
+        fetch('/management/member', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'member_id' : _member_id })
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("memberDataList").value = data.id + "_" + data.name + "_(" + data.number_of_periods + ")";
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    }
+
+    function getMemberId() {
+        var memberData = document.getElementById("memberDataList").value;
+        if (memberData == "") {
+            document.getElementById("member_id").value = "";
+        } else {
+            document.getElementById("member_id").value = memberData.split("_")[0];
+        }
+    }
+
+    function checkLinkStatus() {
+        fetch('/management/user/checkLinkStatus', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'member_id' : document.getElementById("member_id").value })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.checkResult) {
+                document.getElementById("memberDataList").value = "";
+                document.getElementById("member_id").value = "";
+                alert("此團員已被連結");
+            }
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    }
+</script>
+{% endblock %}

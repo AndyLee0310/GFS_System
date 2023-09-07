@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}團員管理{% endblock %}
+{% block content %}
+<div class="row align-items-center justify-content-between">
+    <div class="col">
+        <h1>團員管理</h1>
+    </div>
+    <div class="col d-md-flex justify-content-md-end">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#memberModal"
+            data-bs-whatever="新增">新增</button>
+        <!-- Modal -->
+        <div class="modal fade" id="memberModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="memberModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <form id="memberForm" method="POST" action="/management/members/create">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="memberModalLabel">新增團員</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="row">
+                                    <div class="form-group" id="edit_mode">
+                                        <label for="member_id">團員編號</label>
+                                        <input type="text" class="form-control" id="member_id" name="member_id" placeholder="Enter member id" readonly>
+                                    </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group" id="create_mode">
+                                            <label for="member_id">加入年份</label>
+                                            <select class="form-select" aria-label="Select join year" id="join_year" name="join_year" required>
+                                                {% for i in range(2010, year_now + 1, 1) %}
+                                                <option value="{{ i }}" selected>{{ i }} (民國 {{ i - 1911 }})</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="number_of_periods">屆數/期數</label>
+                                        <input type="number" class="form-control" id="number_of_periods" name="number_of_periods" placeholder="Enter number of periods" min="0">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="state">狀態</label>
+                                        <select class="form-select" aria-label="Select state" id="state" name="state" required>
+                                            <option value="0" selected>正式</option>
+                                            <option value="1">退團</option>
+                                            <option value="2">休團</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="id_number">身分證字號</label>
+                                        <input type="text" class="form-control" id="id_number" name="id_number" placeholder="Enter id number" readonly onchange="getGender()">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <label for="name" hidden>姓名</label>
+                                            <input type="hidden" class="form-control" id="name" name="name" placeholder="Enter name">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="last_name">姓氏</label>
+                                                <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter last name" onchange="getName()">
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="first_name">名字</label>
+                                                <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter first name" onchange="getName()">
+                                            </div>
+                                        </div>
+                                        </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="gender">性別</label>
+                                        <select class="form-select" aria-label="Select auth" id="gender" name="gender">
+                                            <option value="0">女</option>
+                                            <option value="1" selected>男</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="email">電子郵件</label>
+                                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="birthday">生日</label>
+                                        <input type="date" class="form-control" id="birthday" name="birthday" placeholder="Enter birthday">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="phone">手機號碼</label>
+                                        <input type="text" class="form-control" id="phone" name="phone" placeholder="Enter phone">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="tel">家裡電話</label>
+                                        <input type="text" class="form-control" id="tel" name="tel" placeholder="Enter tel">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="form-group">
+                                        <label for="description">備註</label>
+                                        <textarea class="form-control" id="description" name="description" placeholder="Enter description" rows="3">
+                                            {% if description != None %}{{ description }}{% else %}{% endif %}
+                                        </textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <br />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">送出</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<table class="table table-hover text-center">
+    <thead class="table-secondary">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">ID</th>
+            <th scope="col">身分證字號</th>
+            <th scope="col">姓名</th>
+            <th scope="col">電子信箱</th>
+            <th scope="col">性別</th>
+            <th scope="col">屆數/期數</th>
+            <th scope="col">狀態</th>
+            <th scope="col">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i, member in members %}
+        <tr class="{% if member.level == '童軍' %}table-success{% elif member.level == '行義' %}table-info{% elif member.level == '羅浮' %}table-danger{% elif member.level == '團長' %}table-primary{% endif %}">
+            <th scope="row">{{ i + 1 }}</th>
+            <td id="id_{{ member.id }}">{{ member.id }}</td>
+            <td id="id_number_{{ member.id }}">{{ member.id_number }}</td>
+            <td id="name_{{ member.id }}">{{ member.name }}</td>
+            <td id="email_{{ member.id }}">{{ member.email }}</td>
+            <td id="gender_{{ member.id }}">{% if member.gender == "1" %}男{% else %}女{% endif %}</td>
+            <td id="numberOfPeriods_{{ member.id }}">{{ member.number_of_periods }}</td>
+            <td id="state_{{ member.id }}">
+                {% if member.state == '0' %}正式{% elif member.state == '1' %}退團{% else %}休團{% endif%}
+            </td>
+            <td>
+                <div class="row justify-content-center">
+                    <div class="col">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#memberModal" data-bs-whatever="編輯_{{ member.id }}" onclick="getMember({{ member.id }})"><i class="fa-regular fa-address-card"></i>&nbsp;詳細資訊</button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    setTodayAsMaxDate("birthday");
+
+    var memberModal = document.getElementById('memberModal')
+    memberModal.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        var button = event.relatedTarget
+        // Extract info from data-bs-* attributes
+        var recipient = button.getAttribute('data-bs-whatever')
+        // If necessary, you could initiate an AJAX request here
+        // and then do the updating in a callback.
+        //
+        // Update the modal's content.
+        var modalTitle = memberModal.querySelector('.modal-title')
+        var modalBodyInput = memberModal.querySelector('.modal-body input')
+
+        //   modalBodyInput.value = recipient
+        if (recipient == '新增') {
+            document.getElementById("memberForm").action = "/management/member/create";
+            modalTitle.textContent = recipient + '團員'
+            document.getElementById("edit_mode").hidden = true;
+            document.getElementById("create_mode").hidden = false;
+            document.getElementById("member_id").readOnly = false;
+            document.getElementById("id_number").readOnly = false;
+
+            document.getElementById("member_id").value = "";
+            document.getElementById("id_number").value = "";
+            document.getElementById("last_name").value = "";
+            document.getElementById("first_name").value = "";
+            document.getElementById("name").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("birthday").value = "";
+            document.getElementById("gender").value = "1";
+            document.getElementById("number_of_periods").value = "0";
+            document.getElementById("phone").value = "";
+            document.getElementById("tel").value = "";
+            document.getElementById("description").value = "";
+            document.getElementById("state").value = "0";
+        } else if (recipient.includes("編輯")) {
+            document.getElementById("memberForm").action = "/management/member/edit";
+            modalTitle.textContent = recipient.split("_")[0] + '團員'
+            document.getElementById("edit_mode").hidden = false;
+            document.getElementById("create_mode").hidden = true;
+            document.getElementById("member_id").readOnly = true;
+            document.getElementById("id_number").readOnly = true;
+        }
+    })
+
+    function getMember(member_id) {
+        fetch('/management/member', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                member_id: member_id
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("member_id").value = data.id;
+            document.getElementById("id_number").value = data.id_number;
+            document.getElementById("last_name").value = data.last_name;
+            document.getElementById("first_name").value = data.first_name;
+            document.getElementById("name").value = data.name;
+            document.getElementById("email").value = data.email;
+            document.getElementById("birthday").value = data.birthday;
+            document.getElementById("gender").value = data.gender;
+            document.getElementById("number_of_periods").value = data.number_of_periods;
+            document.getElementById("phone").value = data.phone;
+            document.getElementById("tel").value = data.tel;
+            document.getElementById("description").value = data.description != null && data.description.replace("\n", "").replace(/\s*/g, "") != "" ? data.description : "";
+            document.getElementById("state").value = data.state;
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    function getName() {
+        var lastName = document.getElementById("last_name").value;
+        var firstName = document.getElementById("first_name").value;
+        var name = "";
+        name = lastName + firstName;
+        document.getElementById("name").value = name;
+    }
+
+    function getGender() {
+        var id_number = document.getElementById("id_number").value;
+        var gender = id_number.substring(1, 2);
+        if (gender == "1") {
+            gender = 1
+        } else if (gender == "2") {
+            gender = 0
+        } else {
+            gender = 1
+        }
+        document.getElementById("gender").value = gender;
+    }
+</script>
+{% endblock %}

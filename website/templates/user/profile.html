@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}個人資料{% endblock %}
+{% block content %}
+<form method="POST" action="/user/profile/edit">
+    <h3 align="center">個人資料</h3>
+    {% if current_user.member_id != None and current_user.member_id != "" and current_user.auth != "0" %}
+    <div class="row">
+        <div class="col">
+            <div class="form-group">
+                <label for="member_id">團員編號</label>
+                <input type="text" class="form-control" id="member_id" name="member_id" placeholder="Enter member id"
+                    disabled value="{{ current_user.member_id }}">
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-group">
+                <label for="number_of_periods">屆數/期數</label>
+                <input type="text" class="form-control" id="number_of_periods" name="number_of_periods"
+                    placeholder="Enter number of periods" disabled value="{{ member_info.number_of_periods }}">
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-group">
+                <label for="state">狀態</label>
+                <input type="text" class="form-control" id="state" name="state" placeholder="Enter state" disabled
+                    value="{% if member_info.state == '0' %}正式{% elif member_info.state == '1' %}退團{% else %}休團{% endif %}">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="form-group">
+                <label for="id_number">身分證字號</label>
+                <input type="text" class="form-control" id="id_number" name="id_number" placeholder="Enter id number"
+                    disabled value="{{ member_info.id_number }}">
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-group">
+                <label for="name">姓名</label>
+                <input type="text" class="form-control" id="name" name="name" placeholder="Enter name" disabled
+                    value="{{ member_info.name }}">
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-group">
+                <label for="gender">性別</label>
+                <select class="form-select" aria-label="Select auth" id="gender" name="gender" disabled
+                    value="{{ member_info.gender }}">
+                    <option value="0" {% if member_info.gender=="0" %}selected{% endif %}>女</option>
+                    <option value="1" {% if member_info.gender=="1" %}selected{% endif %}>男</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <!-- <div class="col">
+            <div class="form-group">
+                <label for="last_name">姓氏</label>
+                <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter last name"
+                    disabled disabled value="{{ member_info.last_name }}">
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-group">
+                <label for="first_name">名字</label>
+                <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter first name"
+                    disabled value="{{ member_info.first_name }}">
+            </div>
+        </div> -->
+        <div class="col">
+            <div class="form-group">
+                <label for="email">電子郵件</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" disabled
+                    value="{{ member_info.email }}">
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-group">
+                <label for="birthday">生日</label>
+                <input type="date" class="form-control" id="birthday" name="birthday" placeholder="Enter birthday"
+                    disabled value="{{ member_info.birthday }}">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="form-group">
+                <label for="phone">手機號碼</label>
+                <input type="text" class="form-control" id="phone" name="phone" placeholder="Enter phone" disabled
+                    value="{{ member_info.phone }}">
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-group">
+                <label for="tel">家裡電話</label>
+                <input type="text" class="form-control" id="tel" name="tel" placeholder="Enter tel" disabled
+                    value="{{ member_info.tel }}">
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <Script>
+        alert("尚未驗證團員身份，請聯繫團長為您驗證身份");
+        window.location.href = "/";
+    </Script>
+    {% endif %}
+    <br />
+    <button type="button" class="btn btn-primary" id="operationsButton"  onclick="profileEdit()">編輯</button>
+    <button type="button" class="btn btn-warning" id="changePasswordButton" data-bs-toggle="modal" data-bs-target="#changePasswordModal" data-bs-whatever="變更密碼">變更密碼</button>
+</form>
+<!-- Modal -->
+<div class="modal fade" id="changePasswordModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="changePasswordForm" method="POST" action="/user/resetPassword">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changePasswordModalLabel">變更密碼</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="oldPassword">舊密碼</label>
+                        <div class="input-group mb-3">
+                            <input type="password" class="form-control" placeholder="Enter old password" aria-label="Enter old password" aria-describedby="eyeButton" id="oldPassword" name="oldPassword">
+                            <button class="btn btn-outline-secondary" type="button" id="old_eyeButton" onclick="showPassword('old')"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">新密碼</label>
+                        <div class="input-group mb-3">
+                            <input type="password" class="form-control" placeholder="Enter new password" aria-label="Enter new password" aria-describedby="new_eyeButton" id="newPassword" name="newPassword">
+                            <button class="btn btn-outline-secondary" type="button" id="new_eyeButton" onclick="showPassword('new')"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group" id="fieldForPassword">
+                        <label for="confirmPassword">確認新密碼</label>
+                        <div class="input-group mb-3">
+                            <input type="password" class="form-control" placeholder="Enter confirm password" aria-label="Enter confirm password" aria-describedby="confirm_eyeButton" id="confirmPassword" name="confirmPassword">
+                            <button class="btn btn-outline-secondary" type="button" id="confirm_eyeButton" onclick="showPassword('confirm')"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <br />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">送出</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<Script>
+    setTodayAsMaxDate("birthday");
+
+    function profileForm() {
+        var fieldsId = ["changePasswordButton", "email", "name", "gender", "birthday", "phone", "tel"];
+        document.getElementById("changePasswordButton").disabled = !document.getElementById("changePasswordButton").disabled;
+        for (var i = 1; i < fieldsId.length; i++) {
+            document.getElementById(fieldsId[i]).disabled = !document.getElementById(fieldsId[i]).disabled;
+        }
+        var buttonValue = document.getElementById("operationsButton").textContent;
+        document.getElementById("operationsButton").innerHTML = buttonValue == "儲存" ? "編輯" : "儲存";
+        document.getElementById("operationsButton").setAttribute("onclick", buttonValue == "儲存" ? "profileEdit()" : "profileSave()");
+    }
+
+    function profileEdit() {
+        profileForm();
+    }
+
+    function profileSave() {
+        submitForm();
+        profileForm();
+    }
+
+    function submitForm() {
+        console.log('submitForm')
+        if (checkField()) {
+            fetch('/user/profile/edit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: document.getElementById("email").value,
+                    name: document.getElementById("name").value,
+                    gender: document.getElementById("gender").value,
+                    birthday: document.getElementById("birthday").value,
+                    phone: document.getElementById("phone").value,
+                    tel: document.getElementById("tel").value
+                })
+            })
+            .then(data => {
+                if (data.status == 200) {
+                    alert('個人資料修改成功!');
+                } else {
+                    alert('個人資料修改失敗! 請重試!\n錯誤代碼: ' + data.status + '\n錯誤訊息: ' + data.statusText);
+                }
+            });
+        }
+    }
+
+    function checkField() {
+        var email = document.getElementById("email").value
+        var name = document.getElementById("name").value
+        var gender = document.getElementById("gender").value
+        var birthday = document.getElementById("birthday").value
+        var phone = document.getElementById("phone").value
+        var tel = document.getElementById("tel").value
+        if (email == "" || name == "" || gender == "" || birthday == "" || phone == "" || tel == "") {
+            alert("請填寫所有欄位");
+            history.go(0);
+            return false;
+        }
+        return true;
+    }
+</Script>
+{% endblock %}
