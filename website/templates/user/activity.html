@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}活動紀錄{% endblock %}
+{% block content %}
+<form method="POST" action="/user/profile/edit">
+    <h3 align="center">活動紀錄</h3>
+    {% if current_user.member_id != None and current_user.member_id != "" and current_user.auth != "0" %}
+    <table class="table table-hover text-center">
+        <thead class="table-secondary">
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">活動名稱</th>
+                <th scope="col">開始日期</th>
+                <th scope="col">結束日期</th>
+                <th scope="col">地點</th>
+                <th scope="col">狀態</th>       <!-- TODO:已舉辦、待舉辦、取消(停辦) -->
+                <th scope="col">身分</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i, item in activities %}
+            <tr class="{% if item.state == '0' %}table-danger{% elif item.state == '1' %}table-warning{% else %}table-success{% endif %}">
+                <th scope="row">{{ i + 1 }}</th>
+                <td id="name_{{ item.id }}">{{ item.name }}</td>
+                <td id="startDate_{{ item.id }}">{{ item.start_date }}</td>
+                <td id="endDate_{{ item.id }}">{{ item.end_date }}</td>
+                <td id="location_{{ item.id }}">{{ item.location }}</td>
+                <td id="state_{{ item.id }}">
+                    {% if item.state == '0' %}取消(停辦){% elif item.state == '1' %}待舉辦{% else %}已舉辦{% endif%}
+                </td>
+                <td id="identity_{{ item.id }}">{{ item.identity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>    
+    {% else %}
+    <Script>
+        alert("尚未驗證團員身份，請聯繫團長為您驗證身份");
+        window.location.href = "/";
+    </Script>
+    {% endif %}
+    <br />
+</form>
+{% endblock %}

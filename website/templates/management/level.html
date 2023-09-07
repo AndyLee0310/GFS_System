@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}階級(升團)管理{% endblock %}
+{% block content %}
+<div class="row align-items-center justify-content-between">
+    <div class="col">
+        <h1>階級(升團)管理</h1>
+    </div>
+    <div class="col d-md-flex justify-content-md-end">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#levelModal"
+            data-bs-whatever="新增">新增</button>
+        <!-- Modal -->
+        <div class="modal fade" id="levelModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="levelModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="memberForm" method="POST" action="/management/level/create">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="levelModalLabel">新增階級(升團)</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="memberDataList" class="form-label">團員電子信箱、姓名</label>
+                                <input type="hidden" class="form-control" id="member_id" name="member_id" placeholder="Enter member id">
+                                <input class="form-control" list="datalistOptions" id="memberDataList" placeholder="Select the member" onchange="getMemberId()" required>
+                                <datalist id="datalistOptions">
+                                    {% for member in members %}
+                                    <option value="{{ member.id }} ( {{ member.name}} )">
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                            <div class="form-group">
+                                <label for="promotion_name">階級(升團)名稱</label>
+                                <select class="form-select" aria-label="Select promotion name" id="promotion_name" name="promotion_name" required>
+                                    <option value="童軍" selected>童軍</option>
+                                    <option value="行義">行義</option>
+                                    <option value="羅浮">羅浮</option>
+                                    <option value="服務員">服務員</option>
+                                    <option value="團長">團長</option>
+                                    <option value="副團長">副團長</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="promotion_date">(升團)日期</label>
+                                <input type="date" class="form-control" id="promotion_date" name="promotion_date" placeholder="Enter promotion date" onchange="checkYear()" required>
+                            </div>
+                            <br />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="submit" class="btn btn-primary">送出</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<table class="table table-hover text-center">
+    <thead class="table-secondary">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">團員ID</th>
+            <th scope="col">姓名</th>
+            <th scope="col">階級(升團)名稱</th>
+            <th scope="col">(升團)日期</th>
+            <th scope="col">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i, item in levels %}
+        <tr>
+            <th scope="row">{{ i }}</th>
+            <td id="email_{{ i }}">{{ item.member_id }}</td>
+            <td id="name_{{ i }}">{{ item.member_name }}</td>
+            <td id="promotion_name_{{ i }}">{{ item.name }}</td>
+            <td id="promotion_date_{{ i }}">{{ item.promotion_date }}</td>
+            <td>
+                <div class="row justify-content-center">
+                    <div class="col">
+                        <form method="post" action="/management/level/delete" id="deleteForm">
+                            <input type="text" class="form-control" id="delete_id" name="delete_id" placeholder="Enter id for delete" value="{{ item.id }}" hidden>
+                            <button type="button" class="btn btn-danger" onclick="deleteLevel({{item.id}})">刪除</button>
+                        </form>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    setTodayAsMaxDate("promotion_date");
+
+    function getMemberId() {
+        var member = document.getElementById("memberDataList").value.replace(")", "");
+        var member_id = member.split("(")[0].replace(/\s*/g,"");
+        var member_name = member.split("(")[1].replace(/\s*/g,"");
+        document.getElementById("member_id").value = member_id;
+    }
+
+    function deleteLevel(id) {
+        if (confirm("你確定要刪除此筆階級(升團)紀錄嗎?")) {
+            document.getElementById("delete_id").value = id;
+            document.getElementById("deleteForm").submit();
+        }
+    }
+
+    function checkYear() {
+        var member_id = document.getElementById("member_id").value;
+        var join_year = member_id.substring(0, 4);
+        var promotion_date = document.getElementById("promotion_date").value;
+        var promotion_year = promotion_date.substring(0, 4);
+        if (promotion_year < join_year) {
+            alert("升團日期不可早於入團日期");
+            document.getElementById("promotion_date").value = "";
+        }
+    }
+</script>
+{% endblock %}
