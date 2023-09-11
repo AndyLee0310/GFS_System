@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}進程考驗管理{% endblock %}
 {% block content %}
+{% if (current_user.member_id != None and current_user.member_id != "" and current_user.auth == "2") or current_user.auth == "3" %}
 <div class="row align-items-center justify-content-between">
     <div class="col">
         <h1>進程考驗管理</h1>
@@ -13,10 +14,10 @@
             aria-labelledby="advancementModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form id="memberForm" method="POST" action="/management/advancement/create">
+                    <form id="advancementForm" method="POST" action="/management/advancement/create">
                         <div class="modal-header">
                             <h5 class="modal-title" id="advancementModalLabel">新增進程考驗通過</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="clearModal('advancementModal', 'advancementForm')"></button>
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
@@ -50,7 +51,7 @@
                             <br />
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="clearModal('advancementModal', 'advancementForm')">取消</button>
                             <button type="submit" class="btn btn-primary">送出</button>
                         </div>
                     </form>
@@ -121,4 +122,10 @@
         }
     }
 </script>
+{% else %}
+<script>
+    alert("你沒有權限!")
+    window.location.href = "/";
+</script>
+{% endif %}
 {% endblock %}

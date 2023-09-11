@@ -1,34 +1,90 @@
 {% extends "base.html" %}
 {% block title %}專科章考驗{% endblock %}
 {% block content %}
-<form method="POST" action="/user/profile/edit">
-    <h3 align="center">專科章考驗</h3>
-    {% if current_user.member_id != None and current_user.member_id != "" and current_user.auth != "0" %}
-    <table class="table table-hover text-center">
-        <thead class="table-secondary">
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">專科章名稱</th>
-                <th scope="col">通過日期</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for i, item in proficiencyBadges %}
-            <tr>
-                <th scope="row">{{ i + 1 }}</th>
-                <td id="promotion_name_{{ i }}">{{ item.name }}</td>
-                <td id="promotion_date_{{ i }}">{{ item.pass_date }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    
-    {% else %}
-    <Script>
-        alert("尚未驗證團員身份，請聯繫團長為您驗證身份");
-        window.location.href = "/";
-    </Script>
-    {% endif %}
-    <br />
-</form>
+{% if current_user.member_id != None and current_user.member_id != "" and current_user.auth != "0" %}
+<div class="row align-items-center justify-content-center">
+    <div class="col"></div>
+    <div class="col">
+        <h1 align="center">專科章考驗</h1>
+    </div>
+    <div class="col d-md-flex justify-content-md-end">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#pbModal"
+            data-bs-whatever="新增">新增</button>
+        <!-- Modal -->
+        <div class="modal fade" id="pbModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="pbModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="pbForm" method="POST" action="/user/proficiencyBadge/create">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="pbModalLabel">新增專科章考驗通過</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="clearModal('pbModal', 'pbForm')"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="memberDataList" class="form-label">團員ID、姓名</label>
+                                <input type="hidden" class="form-control" id="member_id" name="member_id" placeholder="Enter member id" value="{{ current_user.member_id }}">
+                                <input type="text" class="form-control" id="memberDataList" name="memberDataList" placeholder="Select the member" value="{{ current_user.member_id }} ( {{ current_user.name }} )" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="advancement_name">專科章考驗名稱</label>
+                                <input type="text" class="form-control" id="proficiencyBadge_name" name="proficiencyBadge_name" placeholder="Enter proficiencyBadge name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="pass_date">通過日期</label>
+                                <input type="date" class="form-control" id="pass_date" name="pass_date" placeholder="Enter pass date" onchange="checkYear()" required>
+                            </div>
+                            <br />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="clearModal('pbModal', 'pbForm')">取消</button>
+                            <button type="submit" class="btn btn-primary">送出</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br />
+<table class="table table-hover text-center">
+    <caption>此表僅供參考，實際請依照團長說明為原則，且需提出各項之對應佐證</caption>
+    <thead class="table-secondary">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">專科章名稱</th>
+            <th scope="col">通過日期</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i, item in proficiencyBadges %}
+        <tr>
+            <th scope="row">{{ i + 1 }}</th>
+            <td id="promotion_name_{{ i }}">{{ item.name }}</td>
+            <td id="promotion_date_{{ i }}">{{ item.pass_date }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    setTodayAsMaxDate("pass_date");
+
+    function checkYear() {
+        var member_id = document.getElementById("member_id").value;
+        var join_year = member_id.substring(0, 4);
+        var promotion_date = document.getElementById("pass_date").value;
+        var promotion_year = promotion_date.substring(0, 4);
+        if (promotion_year < join_year) {
+            alert("通過日期不可早於入團日期");
+            document.getElementById("pass_date").value = getToday();
+        }
+    }
+</script>
+{% else %}
+<Script>
+    alert("尚未驗證團員身份，請聯繫團長為您驗證身份");
+    window.location.href = "/";
+</Script>
+{% endif %}
 {% endblock %}

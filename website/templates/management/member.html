@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}團員管理{% endblock %}
 {% block content %}
+{% if (current_user.member_id != None and current_user.member_id != "" and current_user.auth == "2") or current_user.auth == "3" %}
 <div class="row align-items-center justify-content-between">
     <div class="col">
         <h1>團員管理</h1>
@@ -13,25 +14,46 @@
             aria-labelledby="memberModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
-                    <form id="memberForm" method="POST" action="/management/members/create">
+                    <form id="memberForm" method="POST" action="/management/member/create">
                         <div class="modal-header">
                             <h5 class="modal-title" id="memberModalLabel">新增團員</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="clearModal()"></button>
                         </div>
                         <div class="modal-body">
                             <div class="row">
+                                <div class="col" id="unknownYearGroup">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="unknownYearCheckbox"
+                                            name="unknownYearCheckbox" onchange="checkUnknownYear()">
+                                        <label class="form-check-label" for="unknownYearCheckbox">
+                                            加入年份與期數未知
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col" id="defaultYearGroup">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="defaultDataCheckbox"
+                                            name="defaultDataCheckbox" onchange="checkDefaultData()">
+                                        <label class="form-check-label" for="defaultDataCheckbox">
+                                            使用預設資料
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col">
                                     <div class="row">
-                                    <div class="form-group" id="edit_mode">
-                                        <label for="member_id">團員編號</label>
-                                        <input type="text" class="form-control" id="member_id" name="member_id" placeholder="Enter member id" readonly>
-                                    </div>
+                                        <div class="form-group" id="edit_mode">
+                                            <label for="member_id">團員編號</label>
+                                            <input type="text" class="form-control" id="member_id" name="member_id" placeholder="Enter member id" readonly>
+                                        </div>
                                     </div>
                                     <div class="row">
                                         <div class="form-group" id="create_mode">
                                             <label for="member_id">加入年份</label>
-                                            <select class="form-select" aria-label="Select join year" id="join_year" name="join_year" required>
-                                                {% for i in range(2010, year_now + 1, 1) %}
+                                            <input type="text" class="form-control" id="join_year_field" name="join_year_field" placeholder="Enter join year" readonly hidden>
+                                            <select class="form-select" aria-label="Select join year" id="join_year" name="join_year" required onchange="selectYear()">
+                                                {% for i in range(2006, year_now + 1, 1) %}
                                                 <option value="{{ i }}" selected>{{ i }} (民國 {{ i - 1911 }})</option>
                                                 {% endfor %}
                                             </select>
@@ -135,7 +157,7 @@
                             <br />
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="clearModal()">取消</button>
                             <button type="submit" class="btn btn-primary">送出</button>
                         </div>
                     </form>
@@ -145,11 +167,11 @@
     </div>
 </div>
 <table class="table table-hover text-center">
+    <caption>目前在第 {{ page_num }} 頁，共 {{ members_paginate.pages }} 頁，總計 {{ members_paginate.total }} 筆資料</caption>
     <thead class="table-secondary">
         <tr>
-            <th scope="col">#</th>
+            <!-- <th scope="col">#</th> -->
             <th scope="col">ID</th>
-            <th scope="col">身分證字號</th>
             <th scope="col">姓名</th>
             <th scope="col">電子信箱</th>
             <th scope="col">性別</th>
@@ -159,11 +181,10 @@
         </tr>
     </thead>
     <tbody>
-        {% for i, member in members %}
-        <tr class="{% if member.level == '童軍' %}table-success{% elif member.level == '行義' %}table-info{% elif member.level == '羅浮' %}table-danger{% elif member.level == '團長' %}table-primary{% endif %}">
-            <th scope="row">{{ i + 1 }}</th>
+        {% for member in members_paginate.items %}
+        <tr class="{% if member.level == '童軍' %}table-success{% elif member.level == '行義' %}table-info{% elif member.level == '羅浮' %}table-danger{% elif member.level == '團長' %}table-warning{% elif member.level == '服務員' %}table-primary{% endif %}">
+            <!-- <th scope="row"></th> -->
             <td id="id_{{ member.id }}">{{ member.id }}</td>
-            <td id="id_number_{{ member.id }}">{{ member.id_number }}</td>
             <td id="name_{{ member.id }}">{{ member.name }}</td>
             <td id="email_{{ member.id }}">{{ member.email }}</td>
             <td id="gender_{{ member.id }}">{% if member.gender == "1" %}男{% else %}女{% endif %}</td>
@@ -173,18 +194,54 @@
             </td>
             <td>
                 <div class="row justify-content-center">
-                    <div class="col">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#memberModal" data-bs-whatever="編輯_{{ member.id }}" onclick="getMember({{ member.id }})"><i class="fa-regular fa-address-card"></i>&nbsp;詳細資訊</button>
+                    <div class="row">
+                        <div class="col">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#memberModal" data-bs-whatever="編輯_{{ member.id }}" onclick="getMember({{ member.id }})"><i class="fa-regular fa-address-card"></i>&nbsp;詳細資訊</button>
+                        </div>
+                        {% if current_user.auth == "3" %}
+                        <div class="col">
+                            <form method="post" action="/management/member/delete" id="deleteForm">
+                                <input type="hidden" class="form-control" id="delete_id" name="delete_id" placeholder="Enter member id" value="{{ member.id }}">
+                                <button type="button" class="btn btn-danger" onclick="deleteMember({{member.id}})">
+                                    <i class='fa-solid fa-trash-can'></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </td>
         </tr>
         {% endfor %}
     </tbody>
+    <tfoot>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if members_paginate.has_prev %}{% else %}disabled{% endif %}">
+                    <a class="page-link" href="{{members_paginate.prev_num}}" {% if members_paginate.has_prev %}tabindex="-1" aria-disabled="true"{% endif %}>
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% for page in members_paginate.iter_pages() %}
+                    {% if page %}
+                    <li class="page-item {% if page_num == page %}active{% endif %}"><a class="page-link" href="{{page}}">{{page}}</a></li>
+                    {% else %}
+                    ...
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if members_paginate.has_next %}{% else %}disabled{% endif %}">
+                    <a class="page-link" href="{{members_paginate.next_num}}" {% if members_paginate.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </tfoot>
 </table>
 
 <script>
+    var current_user_auth = {{ current_user_auth|tojson|safe }};
     setTodayAsMaxDate("birthday");
 
     var memberModal = document.getElementById('memberModal')
@@ -209,28 +266,45 @@
             document.getElementById("member_id").readOnly = false;
             document.getElementById("id_number").readOnly = false;
 
-            document.getElementById("member_id").value = "";
-            document.getElementById("id_number").value = "";
-            document.getElementById("last_name").value = "";
-            document.getElementById("first_name").value = "";
-            document.getElementById("name").value = "";
-            document.getElementById("email").value = "";
-            document.getElementById("birthday").value = "";
-            document.getElementById("gender").value = "1";
-            document.getElementById("number_of_periods").value = "0";
-            document.getElementById("phone").value = "";
-            document.getElementById("tel").value = "";
-            document.getElementById("description").value = "";
-            document.getElementById("state").value = "0";
+            document.getElementById("unknownYearCheckbox").checked = false;
+            document.getElementById("defaultDataCheckbox").checked = false;
+            document.getElementById("unknownYearGroup").hidden = false;
+            document.getElementById("defaultYearGroup").hidden = false;
+
+            selectYear();
         } else if (recipient.includes("編輯")) {
             document.getElementById("memberForm").action = "/management/member/edit";
             modalTitle.textContent = recipient.split("_")[0] + '團員'
             document.getElementById("edit_mode").hidden = false;
             document.getElementById("create_mode").hidden = true;
             document.getElementById("member_id").readOnly = true;
-            document.getElementById("id_number").readOnly = true;
+            if (current_user_auth == 3) {
+                document.getElementById("id_number").readOnly = false;
+            } else {
+                document.getElementById("id_number").readOnly = true;
+            }
+            document.getElementById("unknownYearCheckbox").checked = false;
+            document.getElementById("defaultDataCheckbox").checked = false;
+            document.getElementById("unknownYearGroup").hidden = true;
+            document.getElementById("defaultYearGroup").hidden = true;
         }
     })
+
+    function clearModal() {
+        document.getElementById("member_id").value = "";
+        document.getElementById("id_number").value = "";
+        document.getElementById("last_name").value = "";
+        document.getElementById("first_name").value = "";
+        document.getElementById("name").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("birthday").value = "";
+        document.getElementById("gender").value = "1";
+        document.getElementById("number_of_periods").value = "0";
+        document.getElementById("phone").value = "";
+        document.getElementById("tel").value = "";
+        document.getElementById("description").value = null;
+        document.getElementById("state").value = "0";
+    }
 
     function getMember(member_id) {
         fetch('/management/member', {
@@ -255,7 +329,7 @@
             document.getElementById("number_of_periods").value = data.number_of_periods;
             document.getElementById("phone").value = data.phone;
             document.getElementById("tel").value = data.tel;
-            document.getElementById("description").value = data.description != null && data.description.replace("\n", "").replace(/\s*/g, "") != "" ? data.description : "";
+            document.getElementById("description").value = data.description != null && data.description.replace("\n", "").replace(/\s*/g, "") != "" ? data.description : null;
             document.getElementById("state").value = data.state;
         })
         .catch((error) => {
@@ -283,5 +357,90 @@
         }
         document.getElementById("gender").value = gender;
     }
+
+    function checkUnknownYear() {
+        var checkUnknownYear = document.getElementById("unknownYearCheckbox").checked;
+        if (checkUnknownYear) {
+            document.getElementById("join_year").hidden = true;
+            document.getElementById("join_year_field").hidden = false;
+            document.getElementById("join_year_field").value = '1000';
+            document.getElementById("number_of_periods").readOnly = true;
+            document.getElementById("number_of_periods").value = '0';
+        } else {
+            document.getElementById("join_year").hidden = false;
+            document.getElementById("join_year_field").hidden = true;
+            document.getElementById("join_year_field").value = '1000';
+            document.getElementById("number_of_periods").readOnly = false;
+            document.getElementById("number_of_periods").value = '';
+        }
+    }
+
+    function checkDefaultData() {
+        var checkDefaultData = document.getElementById("defaultDataCheckbox").checked;
+        var checkUnknownYear = document.getElementById("unknownYearCheckbox").checked;
+        var number_of_periods = document.getElementById("number_of_periods").value;
+        var join_year = "";
+        if (checkUnknownYear) {
+            join_year = document.getElementById("join_year_field").value;
+        } else {
+            join_year = document.getElementById("join_year").value;
+        }
+
+        if (checkDefaultData) {
+            if (number_of_periods == "") {
+                alert("請輸入屆數/期數!");
+                document.getElementById("defaultDataCheckbox").checked = false;
+            } 
+            if (join_year == "") {
+                alert("請輸入加入年份!");
+                document.getElementById("defaultDataCheckbox").checked = false;
+            }
+            
+            if (number_of_periods != "" && join_year != "") {
+                fetch('/management/member/count', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        join_year: join_year,
+                        number_of_periods: number_of_periods
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    var member_number = data.member_count + 1;
+                    var member_id = `${join_year.padStart(4, '0')}${number_of_periods.padStart(3, '0')}${member_number.toString().padStart(3, '0')}`;
+                    document.getElementById("id_number").value = member_id;
+                    document.getElementById("email").value = `${member_id}@example.com`;
+                    document.getElementById("phone").value = member_id;
+                    document.getElementById("tel").value = member_id;
+                    document.getElementById("birthday").value = getToday();
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+        } else {
+            clearModal();
+        }
+    }
+
+    function selectYear() {
+        var join_year = document.getElementById("join_year").value;
+        var first_year = 2007;
+        document.getElementById("number_of_periods").value = join_year - first_year + 1;
+    }
+
+    function deleteMember(member_id) {
+        if (confirm('你確定要刪除此筆團員資料嗎? (此動作無法復原，且會刪除該團員所有相關資料)')) {
+            document.getElementById("delete_id").value = member_id;
+            document.getElementById("deleteForm").submit();
+        }
+    }
 </script>
+{% else %}
+<script>
+    alert("你沒有權限!")
+    window.location.href = "/";
+</script>
+{% endif %}
 {% endblock %}

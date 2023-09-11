@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}三項登記管理{% endblock %}
 {% block content %}
+{% if (current_user.member_id != None and current_user.member_id != "" and current_user.auth == "2") or current_user.auth == "3" %}
 <div class="row align-items-center justify-content-between">
     <div class="col">
         <h1>三項登記管理</h1>
@@ -13,10 +14,10 @@
             aria-labelledby="mrModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form id="memberForm" method="POST" action="/management/member_registration/create">
+                    <form id="mrForm" method="POST" action="/management/member_registration/create">
                         <div class="modal-header">
                             <h5 class="modal-title" id="mrModalLabel">新增三項登記</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="clearModal('mrModal', 'mrForm')"></button>
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
@@ -32,7 +33,7 @@
                             <div class="form-group">
                                 <label for="registration_year">年份</label>
                                 <select class="form-select" aria-label="Select registration year" id="registration_year" name="registration_year" required onchange="checkYear()">
-                                    {% for i in range(2010, year_now + 1, 1) %}
+                                    {% for i in range(2007, year_now + 1, 1) %}
                                     <option value="{{ i }}" selected>{{ i }} (民國 {{ i - 1911 }})</option>
                                     {% endfor %}
                                 </select>
@@ -40,7 +41,7 @@
                             <br />
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="clearModal('mrModal', 'mrForm')">取消</button>
                             <button type="submit" class="btn btn-primary">送出</button>
                         </div>
                     </form>
@@ -107,4 +108,10 @@
         }
     }
 </script>
+{% else %}
+<script>
+    alert("你沒有權限!")
+    window.location.href = "/";
+</script>
+{% endif %}
 {% endblock %}

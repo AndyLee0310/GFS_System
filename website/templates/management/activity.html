@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}活動管理{% endblock %}
 {% block content %}
+{% if (current_user.member_id != None and current_user.member_id != "" and current_user.auth == "2") or current_user.auth == "3" %}
 <div class="row align-items-center justify-content-between">
     <div class="col">
         <h1>活動管理</h1>
@@ -13,10 +14,10 @@
             aria-labelledby="activityModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
-                    <form id="memberForm" method="POST" action="/management/activity/create">
+                    <form id="activityForm" method="POST" action="/management/activity/create">
                         <div class="modal-header">
                             <h5 class="modal-title" id="activityModalLabel">新增活動</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="clearModal();"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="onclick_close_modal()"></button>
                         </div>
                         <div class="modal-body">
                             <div class="form-group" hidden>
@@ -39,15 +40,13 @@
                                 <div class="col">
                                     <div class="form-group">
                                         <label for="name">活動名稱</label>
-                                        <input type="text" class="form-control" id="name" name="name"
-                                            placeholder="Enter name" required>
+                                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter name" required>
                                     </div>
                                 </div>
                                 <div class="col">
                                     <div class="form-group">
                                         <label for="location">地點</label>
-                                        <input type="text" class="form-control" id="location" name="location"
-                                            placeholder="Enter location" required>
+                                        <input type="text" class="form-control" id="location" name="location" placeholder="Enter location" required>
                                     </div>
                                 </div>
                             </div>
@@ -55,15 +54,13 @@
                                 <div class="col">
                                     <div class="form-group">
                                         <label for="start_date">開始日期</label>
-                                        <input type="date" class="form-control" id="start_date" name="start_date"
-                                            placeholder="Enter start date" required onchange="checkDate('start_date')">
+                                        <input type="date" class="form-control" id="start_date" name="start_date" placeholder="Enter start date" required onchange="onchange_start_date()">
                                     </div>
                                 </div>
                                 <div class="col">
                                     <div class="form-group">
                                         <label for="end_date">結束日期</label>
-                                        <input type="date" class="form-control" id="end_date" name="end_date"
-                                            placeholder="Enter end date" required onchange="checkDate('end_date')">
+                                        <input type="date" class="form-control" id="end_date" name="end_date" placeholder="Enter end date" required onchange="onchange_end_date()">
                                     </div>
                                 </div>
                             </div>
@@ -109,7 +106,7 @@
                                             <tbody id="participantsList">
                                             </tbody>
                                         </table>
-                                        <input type="hidden" class="form-control" id="participantList" name="participantList" placeholder="Enter staff List">
+                                        <input type="hidden" class="form-control" id="participantList" name="participantList" placeholder="Enter participant List">
                                     </div>
                                 </div>
                                 <div class="col">
@@ -152,7 +149,7 @@
                             <br />
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="clearModal()">取消</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="onclick_close_modal()">取消</button>
                             <button type="submit" class="btn btn-primary">送出</button>
                         </div>
                     </form>
@@ -174,35 +171,36 @@
         </tr>
     </thead>
     <tbody>
-        {% for i, activity in activities %}
-        <tr class="{% if activity.state == '0' %}table-danger{% elif activity.state == '1' %}table-warning{% else %}table-success{% endif %}">
+        {% for i, item in activities %}
+        <tr class="{% if item.state == '0' %}table-danger{% elif item.state == '1' %}table-warning{% else %}table-success{% endif %}">
             <th scope="row">{{ i }}</th>
-            <td id="name_{{ activity.id }}">{{ activity.name }}</td>
-            <td id="startDate_{{ activity.id }}">{{ activity.start_date }}</td>
-            <td id="endDate_{{ activity.id }}">{{ activity.end_date }}</td>
-            <td id="location_{{ activity.id }}">{{ activity.location }}</td>
-            <td id="state_{{ activity.id }}">
-                {% if activity.state == '0' %}取消(停辦){% elif activity.state == '1' %}待舉辦{% else %}已舉辦{% endif%}
+            <td id="name_{{ item.id }}">{{ item.name }}</td>
+            <td id="startDate_{{ item.id }}">{{ item.start_date }}</td>
+            <td id="endDate_{{ item.id }}">{{ item.end_date }}</td>
+            <td id="location_{{ item.id }}">{{ item.location }}</td>
+            <td id="state_{{ item.id }}">
+                {% if item.state == '0' %}取消(停辦){% elif item.state == '1' %}待舉辦{% else %}已舉辦{% endif%}
             </td>
             <td>
                 <div class="row justify-content-center">
                     <div class="col-5">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#activityModal" data-bs-whatever="編輯_{{ activity.id }}">詳細資訊</button>
+                        <!-- <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#activityModal" data-bs-whatever="編輯_{{ item.id }}">詳細資訊</button> -->
+                        <a href="/management/activity/{{ item.id }}"><button type="button" class="btn btn-primary">詳細資訊</button></a>
                     </div>
                     <div class="col-2">
                         <form method="post" action="/management/activity/delete" id="deleteForm">
-                            <input type="hidden" class="form-control" id="delete_id" name="delete_id" placeholder="Enter activity id" value="{{ activity.id }}">
-                            <button type="button" class="btn btn-danger" onclick="deleteActivity({{activity.id}})">
+                            <input type="hidden" class="form-control" id="delete_id" name="delete_id" placeholder="Enter activity id" value="{{ item.id }}">
+                            <button type="button" class="btn btn-danger" onclick="deleteActivity({{item.id}})">
                                 <i class='fa-solid fa-trash-can'></i>
                             </button>
                         </form>
                     </div>
                     <div class="col-5">
-                        {% if activity.allowed == "0": %}
+                        {% if item.allowed == "0": %}
                         <form method="post" action="/management/activity/allowed" id="allowedForm">
-                            <input type="hidden" class="form-control" id="allowed_id" name="allowed_id" placeholder="Enter activity id" value="{{ activity.id }}">
-                            <button type="button" class="btn btn-warning" onclick="allowedActivity({{activity.id}})">允許新增紀錄</button>
+                            <input type="hidden" class="form-control" id="allowed_id" name="allowed_id" placeholder="Enter activity id" value="{{ item.id }}">
+                            <button type="button" class="btn btn-warning" onclick="allowedActivity({{item.id}})">允許新增紀錄</button>
                         </form>
                         {% endif%}
                     </div>
@@ -214,44 +212,6 @@
 </table>
 
 <script>
-    function addRowForTable(_tableId, _mid, _name, _num, mode) {
-        var table = document.getElementById(`${_tableId}`);
-        var row = table.insertRow(-1);
-        var cell1 = row.insertCell(0);
-        var cell2 = row.insertCell(1);
-        var cell3 = row.insertCell(2);
-        var cell4 = row.insertCell(3);
-        var cell5 = row.insertCell(4);
-        cell1.innerHTML = table.rows.length;
-        cell2.innerHTML = _mid;
-        cell3.innerHTML = _name;
-        cell4.innerHTML = _num;
-        if (mode == "staff") {
-            cell5.innerHTML = `<button type='button' class='btn' id='deleteStaff_${table.rows.length}_btn' onclick='deleteStaff("${_mid}", "${_name}", "${_num}")'><i class='fa-solid fa-trash-can'></i></button>`;
-        } else if (mode == "participant") {
-            cell5.innerHTML = `<button type='button' class='btn' id='deleteParticipant_${table.rows.length}_btn' onclick='deleteParticipant("${_mid}", "${_name}", "${_num}")'><i class='fa-solid fa-trash-can'></i></button>`;
-        }
-    }
-
-    function deleteAllRowForTable(_tableId) {
-        var table = document.getElementById(`${_tableId}`);
-        // 刪除所有的row
-        for (var i = table.rows.length - 1; i > 0; i--) {
-            table.deleteRow(i); // 從最後一行開始刪
-        }
-        if (table.rows.length > 0) {
-            table.deleteRow(0);
-        }
-    }
-
-    function getMidToField(_fieldId, _list) {
-        var temp = [];
-        for (var i = 0; i < _list.length; i++) {
-            temp.push(_list[i].mid);
-        }
-        document.getElementById(`${_fieldId}`).value = JSON.stringify(temp);
-    }
-
     var _participantsList = [];
     var _staffsList = [];
 
@@ -281,17 +241,18 @@
             }
         }
         _participantsList.push({ mid: member_id, name: member_name, num: member_numberOfPeriods });
-        getMidToField("participantList", _participantsList);
+        getMemberToField("participantList", _participantsList);
 
         addRowForTable("participantsList", member_id, member_name, member_numberOfPeriods, "participant");
         document.getElementById("participantDataList").value = "";
     }
 
+    // 不可刪除，因為有使用到該function的function在shard.js
     function deleteParticipant(mid, name, num) {
         _participantsList = _participantsList.filter((value) => {
             return (value.mid != mid || value.name != name || value.num != num)
         });
-        getMidToField("participantList", _participantsList);
+        getMemberToField("participantList", _participantsList);
 
         // 刪除所有的row
         deleteAllRowForTable("participantsList")
@@ -328,17 +289,18 @@
             }
         }
         _staffsList.push({ mid: member_id, name: member_name, num: member_numberOfPeriods });
-        getMidToField("staffList", _staffsList);
+        getMemberToField("staffList", _staffsList);
 
         addRowForTable("staffsList", member_id, member_name, member_numberOfPeriods, "staff");
         document.getElementById("staffDataList").value = "";
     }
 
+    // 不可刪除，因為有使用到該function的function在shard.js
     function deleteStaff(mid, name, num) {
         _staffsList = _staffsList.filter((value) => {
             return (value.mid != mid || value.name != name || value.num != num)
         });
-        getMidToField("staffList", _staffsList);
+        getMemberToField("staffList", _staffsList);
 
         // 刪除所有的row
         deleteAllRowForTable("staffsList")
@@ -349,155 +311,43 @@
         }
     }
 
-    function clearModal() {
+    function onchange_start_date() {
+        start_date_field_id = 'start_date'
+        end_date_field_id = 'end_date'
+        delete_date_field_id = 'start_date'
+        alert_text = '開始日期不可晚於結束日期'
+        checkDate(start_date_field_id, end_date_field_id, delete_date_field_id, alert_text)
+    }
+
+    function onchange_end_date() {
+        start_date_field_id = 'start_date'
+        end_date_field_id = 'end_date'
+        delete_date_field_id = 'end_date'
+        alert_text = '結束日期不可早於開始日期'
+        checkDate(start_date_field_id, end_date_field_id, delete_date_field_id, alert_text)
+    }
+
+    function onclick_close_modal() {
+        clearModal('activityModal', 'activityForm')
+        clearParticipantsTable()
+        clearStaffTable();
+        clearForm()
+    }
+
+    function clearParticipantsTable() {
         _participantsList = [];
+        getMemberToField("participantList", _participantsList);
         deleteAllRowForTable("participantsList");
+    }
+
+    function clearStaffTable() {
         _staffsList = [];
+        getMemberToField("staffList", _staffsList);
         deleteAllRowForTable("staffsList");
-        document.getElementById("name").value = "";
-        document.getElementById("start_date").value = "";
-        document.getElementById("end_date").value = "";
-        document.getElementById("location").value = "";
+    }
+
+    function clearForm() {
         document.getElementById("description").value = "";
-        document.getElementById("participantList").value = "";
-        document.getElementById("staffList").value = "";
-        document.getElementById("state").value = "1";
-    }
-
-    var activityModal = document.getElementById('activityModal')
-    activityModal.addEventListener('show.bs.modal', function (event) {
-        // Button that triggered the modal
-        var button = event.relatedTarget
-        // Extract info from data-bs-* attributes
-        var recipient = button.getAttribute('data-bs-whatever')
-        // If necessary, you could initiate an AJAX request here
-        // and then do the updating in a callback.
-        //
-        // Update the modal's content.
-        var modalTitle = activityModal.querySelector('.modal-title')
-        var modalBodyInput = activityModal.querySelector('.modal-body input')
-
-        if (recipient == '新增') {
-            document.getElementById("memberForm").action = "/management/activity/create";
-            modalTitle.textContent = recipient + '活動';
-        } else if (recipient.includes("編輯")) {
-            document.getElementById("memberForm").action = "/management/activity/edit";
-            modalTitle.textContent = recipient.split("_")[0] + '活動'
-            var id = recipient.split("_")[1];
-            fetch('/management/activity', {
-                method: 'POST',
-                body: JSON.stringify({ 'activity_id': id }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById("activity_id").value = data.id;
-                document.getElementById("name").value = data.name;
-                document.getElementById("start_date").value = data.start_date;
-                document.getElementById("end_date").value = data.end_date;
-                document.getElementById("location").value = data.location;
-                document.getElementById("description").value = data.description;
-                document.getElementById("state").value = data.state;
-                // 判斷是否有參加人員
-                if (data.participants != "") {
-                    var jsonParticipants = JSON.parse(data.participants);
-                    getParticipantsForEditMode(jsonParticipants);
-                }
-                // 判斷是否有服務人員
-                if (data.staffs != "") {
-                    var jsonStaffs = JSON.parse(data.staffs);
-                    getStaffsForEditMode(jsonStaffs);
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        }
-    })
-
-    function removeDuplicateObjects(jsonArray) {
-        const uniqueObjects = [];
-        const seenObjects = {};
-
-        for (const obj of jsonArray) {
-            // 將JSON轉為字串，以方便比較
-            const objStr = JSON.stringify(obj);
-
-            if (!seenObjects[objStr]) {
-                // 如果未见过这个对象，将其添加到结果数组和已见对象字典中
-                uniqueObjects.push(obj);
-                seenObjects[objStr] = true;
-            }
-        }
-        return uniqueObjects;
-    }
-
-    function getParticipantsForEditMode(jsonParticipants) {
-        var fetchPromises_participants = [];
-        for (var i = 0; i < jsonParticipants.length; i++) {
-            var fetchPromise = fetch('/management/member', {
-                method: 'POST',
-                body: JSON.stringify({ 'member_id': jsonParticipants[i] }),
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                return { mid: data.id, name: data.name, num: data.number_of_periods };
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-            fetchPromises_participants.push(fetchPromise);
-        }
-
-        Promise.all(fetchPromises_participants)
-            .then(participantsData => {
-                _participantsList = participantsData;
-                getMidToField("participantList", _participantsList);
-
-                var removeDuplicateParticipants = removeDuplicateObjects(_participantsList);
-                for (var i = 0; i < removeDuplicateParticipants.length; i++) {
-                    addRowForTable("participantsList", removeDuplicateParticipants[i].mid, removeDuplicateParticipants[i].name, removeDuplicateParticipants[i].num, "participant");
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-    }
-
-    function getStaffsForEditMode(jsonStaffs) {
-        var fetchPromises_staffs = [];
-        for (var i = 0; i < jsonStaffs.length; i++) {
-            var fetchPromise = fetch('/management/member', {
-                method: 'POST',
-                body: JSON.stringify({ 'member_id': jsonStaffs[i] }),
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                return { mid: data.id, name: data.name, num: data.number_of_periods };
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-            fetchPromises_staffs.push(fetchPromise);
-        }
-
-        Promise.all(fetchPromises_staffs)
-            .then(participantsData => {
-                _staffsList = participantsData;
-                getMidToField("staffList", _staffsList);
-
-                var removeDuplicateStaffs = removeDuplicateObjects(_staffsList);
-                for (var i = 0; i < removeDuplicateStaffs.length; i++) {
-                    addRowForTable("staffsList", removeDuplicateStaffs[i].mid, removeDuplicateStaffs[i].name, removeDuplicateStaffs[i].num, "staff");
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
     }
 
     function deleteActivity(activity_id) {
@@ -513,14 +363,11 @@
             document.getElementById("allowedForm").submit();
         }
     }
-
-    function checkDate(dateField_id) {
-        var startDate = new Date(document.getElementById("start_date").value);
-        var endDate = new Date(document.getElementById("end_date").value);
-        if (startDate > endDate) {
-            alert("結束日期不可早於開始日期");
-            document.getElementById(`${dateField_id}`).value = "";
-        }
-    }
 </script>
+{% else %}
+<script>
+    alert("你沒有權限!")
+    window.location.href = "/";
+</script>
+{% endif %}
 {% endblock %}
