@@ -31,7 +31,6 @@
      - 活動(可看到自己在活動中是參加人員亦或工作人員)
      - 服務
    - 新增自己的各項資料:
-     - 階級(升團)
      - 進程考驗
      - 專科章考驗
      - 活動
@@ -98,3 +97,14 @@
 ## 📌 License
 
 This project is [GNU General Public License 3.0](https://www.gnu.org/licenses/gpl-3.0.html) licensed.
+
+## 📌 Version Informatio
+
+ - v1.1.1 (Update data:2023.09.05)
+   - 完成整個網站系統的大致架構
+   - 管理員身份可操作之相關已完成
+   - 非管理員身份暫時僅可觀看與其本身相關之紀錄
+
+ - v1.1.7 (Update data:2023.09.11)
+   - 非管理員身分可新增部分紀錄
+   - 管理員身份部分介面修正

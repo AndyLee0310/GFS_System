@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}階級(升團)管理{% endblock %}
 {% block content %}
+{% if (current_user.member_id != None and current_user.member_id != "" and current_user.auth == "2") or current_user.auth == "3" %}
 <div class="row align-items-center justify-content-between">
     <div class="col">
         <h1>階級(升團)管理</h1>
@@ -115,7 +116,15 @@
         if (promotion_year < join_year) {
             alert("升團日期不可早於入團日期");
             document.getElementById("promotion_date").value = "";
+        } else if (promotion_year >= join_year) {
+
         }
     }
 </script>
+{% else %}
+<script>
+    alert("你沒有權限!")
+    window.location.href = "/";
+</script>
+{% endif %}
 {% endblock %}

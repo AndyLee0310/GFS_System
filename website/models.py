@@ -82,3 +82,18 @@ class Service(db.Model):
     description = db.Column(db.Text()) # 備註(例如:服務內容、服務照片連結、服務相關資訊連結等)
     file_path = db.Column(db.Text()) # 檔案路徑(服務紀錄檔案)
     allowed = db.Column(db.String(150)) # 是否允許登入該活動(0:不允許、1:允許) - 意旨:若團員自己新增活動資料，則預設為不允許，需由管理員/團長審核後才能允許
+
+# 紀錄
+class SystemRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id')) # 使用者id
+    description = db.Column(db.Text()) # 紀錄操作內容
+    record_date = db.Column(db.String(255)) # 紀錄日期
+    record_time = db.Column(db.String(255)) # 紀錄時間
+
+# 紀錄錯誤訊息 - 用於除錯，先創建以防未來有需要
+class ErrorLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.Text()) # 錯誤訊息
+    error_date = db.Column(db.String(255)) # 錯誤日期
+    error_time = db.Column(db.String(255)) # 錯誤時間

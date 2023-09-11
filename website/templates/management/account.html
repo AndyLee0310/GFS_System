@@ -1,28 +1,25 @@
 {% extends "base.html" %}
 {% block title %}帳號管理{% endblock %}
 {% block content %}
+{% if (current_user.member_id != None and current_user.member_id != "" and current_user.auth == "2") or current_user.auth == "3" %}
 <div class="row align-items-center justify-content-between">
     <div class="col">
         <h1>帳號管理</h1>
     </div>
     <div class="col d-md-flex justify-content-md-end">
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#memberModal"
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#accountModal"
             data-bs-whatever="新增">新增</button>
         <!-- Modal -->
-        <div class="modal fade" id="memberModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-            aria-labelledby="memberModalLabel" aria-hidden="true">
+        <div class="modal fade" id="accountModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="accountModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form id="memberForm" method="POST" action="/management/members/create">
+                    <form id="accountForm" method="POST" action="/management/account/create">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="memberModalLabel">新增團員</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title" id="accountModalLabel">新增帳號</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="clearModal('accountModal', 'accountForm')"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="form-group" hidden>
-                                <label for="id">ID</label>
-                                <input type="text" class="form-control" id="id" name="id" placeholder="Enter id">
-                            </div>
                             <div class="form-group">
                                 <label for="email">電子信箱</label>
                                 <input type="email" class="form-control" id="email" name="email"
@@ -42,9 +39,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="memberDataList">連結團員</label>
-                                <input type="hidden" class="form-control" id="member_id"
-                                    name="member_id" placeholder="Enter member id">
-                                <input class="form-control" list="datalistOptions" id="memberDataList" placeholder="Select the member..." onchange="getMemberId()&checkLinkStatus()">
+                                <input type="hidden" class="form-control" id="member_id" name="member_id" placeholder="Enter member id">
+                                <input class="form-control" list="datalistOptions" id="memberDataList" placeholder="Select the member..." onchange="checkLinkStatus()&getMemberId()">
                                 <datalist id="datalistOptions">
                                     {% for member in members %}
                                     <option value="{{ member.id }}_{{ member.name }}_({{ member.number_of_periods }})">
@@ -56,7 +52,7 @@
                                 <select class="form-select" aria-label="Select auth" id="auth" name="auth" required>
                                     <option value="0" selected>訪客</option>
                                     <option value="1">一般</option>
-                                    <option value="2">管理員/系統管理員</option>
+                                    <option value="2">管理員</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -67,7 +63,7 @@
                             <br />
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="clearModal('accountModal', 'accountForm')">取消</button>
                             <button type="submit" class="btn btn-primary">送出</button>
                         </div>
                     </form>
@@ -89,13 +85,13 @@
         </tr>
     </thead>
     <tbody>
-        {% for user in users %}
+        {% for i, user in users %}
         <tr class="{% if user.auth == '0' %}{% elif user.auth == '1' %}table-success{% elif user.auth == '2' %}table-primary{% endif %}">
-            <th scope="row">{{ user.id }}</th>
+            <th scope="row">{{ i + 1 }}</th>
             <td id="email_{{ user.id }}">{{ user.email }}</td>
             <td id="name_{{ user.id }}">{{ user.name }}</td>
             <td id="member_id_{{ user.id }}">{% if user.member_id == None %}{% else %}{{ user.member_id }}{% endif %}</td>
-            <td id="auth_{{ user.id }}">{% if user.auth == '0' %}訪客{% elif user.auth == '1' %}一般{% else %}管理員/系統管理員{% endif %}</td>
+            <td id="auth_{{ user.id }}">{% if user.auth == '0' %}訪客{% elif user.auth == '1' %}一般{% elif user.auth == '2' %}管理員{% elif user.auth == '3' %}系統管理員{% endif %}</td>
             <td id="state_{{ user.id }}">
                 {% if user.state == '1' %}
                 <span style="color: #198754">正常</span>
@@ -115,7 +111,7 @@
                     </div>
                     <div class="col-3">
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#memberModal" data-bs-whatever="編輯_{{ user.id }}">編輯</button>
+                            data-bs-target="#accountModal" data-bs-whatever="編輯_{{ user.id }}">編輯</button>
                     </div>
                     <div class="col-3">
                         <form method="post" action="/management/account/change_state">
@@ -144,8 +140,8 @@
         }
     }
 
-    var memberModal = document.getElementById('memberModal')
-    memberModal.addEventListener('show.bs.modal', function (event) {
+    var accountModal = document.getElementById('accountModal')
+    accountModal.addEventListener('show.bs.modal', function (event) {
         // Button that triggered the modal
         var button = event.relatedTarget
         // Extract info from data-bs-* attributes
@@ -154,44 +150,58 @@
         // and then do the updating in a callback.
         //
         // Update the modal's content.
-        var modalTitle = memberModal.querySelector('.modal-title')
-        var modalBodyInput = memberModal.querySelector('.modal-body input')
+        var modalTitle = accountModal.querySelector('.modal-title')
+        var modalBodyInput = accountModal.querySelector('.modal-body input')
 
         //   modalBodyInput.value = recipient
         if (recipient == '新增') {
-            document.getElementById("memberForm").action = "/management/account/create";
+            document.getElementById("accountForm").action = "/management/account/create";
             modalTitle.textContent = recipient + '帳號'
 
             document.getElementById("email").readOnly = false;
             document.getElementById("fieldForPassword").hidden = false;
-
-            document.getElementById("id").value = id;
-            document.getElementById("email").value = "";
-            document.getElementById("name").value = "";
-            document.getElementById("memberDataList").value = "";
-            document.getElementById("auth").value = "0";
-            document.getElementById("state").value = "正常";
         } else if (recipient.includes("編輯")) {
-            document.getElementById("memberForm").action = "/management/account/edit";
+            document.getElementById("accountForm").action = "/management/account/edit";
             modalTitle.textContent = recipient.split("_")[0] + '帳號'
             document.getElementById("email").readOnly = true;
             document.getElementById("fieldForPassword").hidden = true;
 
             var id = recipient.split("_")[1];
-            document.getElementById("id").value = id;
-            document.getElementById("email").value = document.getElementById("email_" + id).textContent;
-            document.getElementById("name").value = document.getElementById("name_" + id).textContent;
-            var member_id = document.getElementById("member_id_" + id).textContent;
-            if (member_id == "") {
-                document.getElementById("memberDataList").value = "";
-            } else {
-                getMember(member_id);
-            }
-            document.getElementById("auth").value = document.getElementById("auth_" + id).textContent == "管理員/系統管理員" ? "2" : document.getElementById("auth_" + id).textContent == "一般" ? "1" : "0";
-            var _state = document.getElementById("state_" + id).textContent.replace("\n", "").replace(/\s*/g, "");
-            document.getElementById("state").value = _state;
+            var email = document.getElementById("email_" + id).textContent
+            getAccountInfo(id, email);
         }
     })
+
+    function getAccountInfo(accountId, email) {
+        fetch('/management/account', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'account_id' : accountId, 'email' : email })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("email").value = data.email;
+            document.getElementById("name").value = data.name;
+            if (data.member_id == "") {
+                document.getElementById("memberDataList").value = "";
+            } else {
+                getMember(data.member_id);
+                document.getElementById("member_id").value = data.member_id;
+            }
+            document.getElementById("auth").value = data.auth;
+            if (data.state == "1") {
+                document.getElementById("state").value = "正常";
+            } else if (data.state == "0") {
+                document.getElementById("state").value = "停權";
+            }
+            
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    }
 
     function getMember(_member_id) {
         fetch('/management/member', {
@@ -240,4 +250,10 @@
         });
     }
 </script>
+{% else %}
+<script>
+    alert("你沒有權限!")
+    window.location.href = "/";
+</script>
+{% endif %}
 {% endblock %}

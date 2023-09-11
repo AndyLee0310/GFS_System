@@ -1,39 +1,312 @@
 {% extends "base.html" %}
 {% block title %}服務紀錄{% endblock %}
 {% block content %}
-<form method="POST" action="/user/profile/edit">
-    <h3 align="center">服務紀錄</h3>
-    {% if current_user.member_id != None and current_user.member_id != "" and current_user.auth != "0" %}
-    <table class="table table-hover text-center">
-        <thead class="table-secondary">
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">服務名稱</th>
-                <th scope="col">開始日期/時間</th>
-                <th scope="col">結束日期/時間</th>
-                <th scope="col">時數</th>
-                <th scope="col">地點</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for i, item in services %}
-            <tr">
-                <th scope="row">{{ i + 1 }}</th>
-                <td id="name_{{ item.id }}">{{ item.name }}</td>
-                <td id="startDateTime_{{ item.id }}">{{ item.start_date }} {{ item.start_time }}</td>
-                <td id="endDateTime_{{ item.id }}">{{ item.end_date }} {{ item.end_time }}</td>
-                <td id="service_hours_{{ item.id }}">{{ item.service_hours }}</td>
-                <td id="location_{{ item.id }}">{{ item.location }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>    
-    {% else %}
-    <Script>
-        alert("尚未驗證團員身份，請聯繫團長為您驗證身份");
-        window.location.href = "/";
-    </Script>
-    {% endif %}
-    <br />
-</form>
+{% if current_user.member_id != None and current_user.member_id != "" and current_user.auth != "0" %}
+<div class="row align-items-center justify-content-center">
+    <div class="col"></div>
+    <div class="col">
+        <h1 align="center">服務紀錄</h1>
+    </div>
+    <div class="col d-md-flex justify-content-md-end">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#serviceModal"
+            data-bs-whatever="新增">新增</button>
+        <!-- Modal -->
+        <div class="modal fade" id="serviceModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="serviceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <form id="serviceForm" method="POST" action="/user/service/create">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="serviceModalLabel">新增服務</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="clearModal('serviceModal', 'serviceForm')&clearTable()"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <label for="name">服務名稱</label>
+                                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <label for="location">服務地點</label>
+                                            <input type="text" class="form-control" id="location" name="location" placeholder="Enter location" required>
+                                        </div>
+                                    </div>
+                                    <div class="row align-items-center">
+                                        <div class="col">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="allDayCheckbox"
+                                                    name="allDayCheckbox" onchange="checkAllDay()">
+                                                <label class="form-check-label" for="allDayCheckbox">
+                                                    整天
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="service_hours">服務時數</label>
+                                                <input type="number" class="form-control" id="service_hours"
+                                                    name="service_hours" placeholder="Enter service hours" min="0"
+                                                    step="0.1">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="start_date">開始日期</label>
+                                                <input type="date" class="form-control" id="start_date" name="start_date"
+                                                    placeholder="Enter start date" required
+                                                    onchange="checkDate('start_date')&checkAllDay()">
+                                            </div>
+                                        </div>
+                                        <div class="col" id="start_time_col">
+                                            <div class="form-group">
+                                                <label for="start_time">開始時間</label>
+                                                <input type="time" class="form-control" id="start_time" name="start_time"
+                                                    placeholder="Enter start time">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="end_date">結束日期</label>
+                                                <input type="date" class="form-control" id="end_date" name="end_date"
+                                                    placeholder="Enter end date" required
+                                                    onchange="checkDate('end_date')&checkAllDay()">
+                                            </div>
+                                        </div>
+                                        <div class="col" id="end_time_col">
+                                            <div class="form-group">
+                                                <label for="end_time">結束時間</label>
+                                                <input type="time" class="form-control" id="end_time" name="end_time"
+                                                    placeholder="Enter end time">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="description">服務內容</label>
+                                                <textarea class="form-control" id="description" name="description" placeholder="Enter description" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="form-group">
+                                                <label for="participants">參與人員</label>
+                                                <table class="table table-bordered text-center" id="participants"
+                                                    name="participants">
+                                                    <thead class="table-secondary">
+                                                        <tr class="table-light">
+                                                            <th scope="col" colspan="2">
+                                                                <input type="text" class="form-control" id="ptName" name="ptName" placeholder="姓名">
+                                                            </th>
+                                                            <th scope="col">
+                                                                <input type="number" min="0" class="form-control" id="ptNoP" name="ptNoP" placeholder="期數/屆數">
+                                                            </th>
+                                                            <th scope="col">
+                                                                <button type="button" class="btn btn-success" id="addParticipant_btn" onclick="addParticipant()">新增</button>
+                                                            </th>
+                                                        </tr>
+                                                        <tr>
+                                                            <th scope="col">#</th>
+                                                            <th scope="col">姓名</th>
+                                                            <th scope="col">期數</th>
+                                                            <th scope="col">操作</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="participantsList">
+                                                    </tbody>
+                                                </table>
+                                                <input type="hidden" class="form-control" id="participantList"
+                                                    name="participantList" placeholder="Enter participant List">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <br />
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="clearModal('serviceModal', 'serviceForm')&clearTable()">取消</button>
+                            <button type="submit" class="btn btn-primary">送出</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br />
+<table class="table table-hover text-center">
+    <caption>此表僅供參考，實際請依照團長說明為原則，且需提出各項之對應佐證</caption>
+    <thead class="table-secondary">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">服務名稱</th>
+            <th scope="col">開始日期/時間</th>
+            <th scope="col">結束日期/時間</th>
+            <th scope="col">時數</th>
+            <th scope="col">地點</th>
+            <th scope="col">是否審核</th>
+    </tr>
+    </thead>
+    <tbody>
+        {% for i, item in services %}
+        <tr class="{% if item.allowed == '0' %}table-danger{% elif item.allowed == '1' %}table-success{% endif %}">
+            <th scope="row">{{ i + 1 }}</th>
+            <td id="name_{{ item.id }}">{{ item.name }}</td>
+            <td id="startDateTime_{{ item.id }}">{{ item.start_date }} {% if item.start_time == None %}{% else %}{{ item.start_time }}{% endif %}</td>
+            <td id="endDateTime_{{ item.id }}">{{ item.end_date }} {% if item.end_time == None %}{% else %}{{ item.end_time }}{% endif %}</td>
+            <td id="service_hours_{{ item.id }}">{{ item.service_hours }}</td>
+            <td id="location_{{ item.id }}">{{ item.location }}</td>
+            <td id="isVerified_{{ item.id }}">
+                {% if item.allowed == '0' %}
+                <span style="color: #ff0000">否</span>
+                <i class="fa-solid fa-xmark" style="color: #ff0000;"></i>
+                {% else %}
+                <span style="color: #198754">是</span>
+                <i class="fa-regular fa-circle" style="color: #198754;"></i>
+                {% endif%}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    var _participantsList = [];
+
+    function addRowForTable(_tableId, _name, _num, mode) {
+        var table = document.getElementById(`${_tableId}`);
+        var row = table.insertRow(-1);
+        var cell1 = row.insertCell(0);
+        var cell2 = row.insertCell(1);
+        var cell3 = row.insertCell(2);
+        var cell4 = row.insertCell(3);
+        cell1.innerHTML = table.rows.length;
+        cell2.innerHTML = _name;
+        cell3.innerHTML = _num;
+        if (mode == "participant") {
+            cell4.innerHTML = `<button type='button' class='btn' id='deleteParticipant_${table.rows.length}_btn' onclick='deleteParticipant("${_name}", "${_num}")'><i class='fa-solid fa-trash-can'></i></button>`;
+        }
+    }
+
+    // 取得member的姓名跟期數並存進Field
+    function getMemberToField(_fieldId, _list) {
+        var temp = [];
+        for (var i = 0; i < _list.length; i++) {
+            temp.push({ name: _list[i].name, num: _list[i].num });
+        }
+        document.getElementById(`${_fieldId}`).value = JSON.stringify(temp);
+    }
+
+    function addParticipant() {
+        if (document.getElementById("ptName").value == "") {
+            alert("請輸入參加人員");
+            return;
+        }
+
+        var member_name = document.getElementById("ptName").value;
+        var member_numberOfPeriods = document.getElementById("ptNoP").value;
+
+        for (var i = 0; i < _participantsList.length; i++) {
+            if (_participantsList[i].name == member_name && _participantsList[i].num == member_numberOfPeriods) {
+                alert("已新增過此人員");
+                document.getElementById("ptName").value = "";
+                document.getElementById("ptNoP").value = "";
+                return;
+            }
+        }
+        _participantsList.push({ name: member_name, num: member_numberOfPeriods });
+        getMemberToField("participantList", _participantsList);
+
+        addRowForTable("participantsList", member_name, member_numberOfPeriods, "participant");
+        document.getElementById("ptName").value = "";
+        document.getElementById("ptNoP").value = "";
+    }
+
+    function deleteParticipant(name, num) {
+        _participantsList = _participantsList.filter((value) => {
+            return (value.name != name || value.num != num)
+        });
+        getMemberToField("participantList", _participantsList);
+
+        // 刪除所有的row
+        deleteAllRowForTable("participantsList")
+
+        // 重新新增row
+        for (var i = 0; i < _participantsList.length; i++) {
+            addRowForTable("participantsList", _participantsList[i].name, _participantsList[i].num, "participant");
+        }
+    }
+
+    function get_service_hours_for_allDay() {
+        var dayDiff = getDaysDifference("start_date", "end_date");
+        document.getElementById("service_hours").value = (dayDiff + 1) * 8;
+    }
+
+    function getDaysDifference(start_date, end_date) {
+        var _start_date = new Date(document.getElementById(`${start_date}`).value);
+        var _end_date = new Date(document.getElementById(`${end_date}`).value);
+
+        if (_start_date != "" && _end_date != "") {
+            var timeDifference = _end_date - _start_date;
+            var daysDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+            return daysDifference;
+        }
+    }
+
+
+    function checkAllDay() {
+        var allDayCheckbox = document.getElementById("allDayCheckbox").checked;
+        if (allDayCheckbox) {
+            document.getElementById("start_time_col").hidden = true;
+            document.getElementById("end_time_col").hidden = true;
+            if (document.getElementById("start_date").value == "" && document.getElementById("end_date").value == "") {
+                document.getElementById("start_date").value = getToday();
+                document.getElementById("end_date").value = getToday();
+            } else if (document.getElementById("start_date").value == "" && document.getElementById("end_date").value != "") {
+                document.getElementById("start_date").value = document.getElementById("end_date").value;
+            } else if (document.getElementById("start_date").value != "" && document.getElementById("end_date").value == "") {
+                document.getElementById("end_date").value = document.getElementById("start_date").value;
+            }
+            get_service_hours_for_allDay();
+        } else {
+            document.getElementById("start_time_col").hidden = false;
+            document.getElementById("end_time_col").hidden = false;
+        }
+    }
+
+    function checkDate(dateField_id) {
+        var startDate = new Date(document.getElementById("start_date").value);
+        var endDate = new Date(document.getElementById("end_date").value);
+        if (startDate != "" && endDate != "") {
+            if (startDate > endDate) {
+                alert("結束日期不可早於開始日期");
+                document.getElementById(`${dateField_id}`).value = "";
+            }
+        }
+    }
+
+    function clearTable() {
+        _participantsList = [];
+        getMemberToField("participantList", _participantsList);
+        deleteAllRowForTable("participantsList");
+    }
+</script>
+{% else %}
+<Script>
+    alert("尚未驗證團員身份，請聯繫團長為您驗證身份");
+    window.location.href = "/";
+</Script>
+{% endif %}
 {% endblock %}
